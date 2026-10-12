@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RADE V1 Transceiver</title>
+<title>RADE V1 — Transceptor (PT)</title>
 <script>
 (function(){ var t = null; try { t = JSON.parse(localStorage.getItem('radetx.theme')); } catch (e) {}
   if (t !== 'light' && t !== 'dark') t = window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
@@ -29,6 +29,7 @@
   select,input[type=text]{font:inherit;font-size:13px;padding:6px 8px;background:#0b0e14;color:var(--ink);
        border:1px solid var(--line);border-radius:5px;min-width:0}
   select{max-width:260px}
+  #rigSel{max-width:420px}
   input[type=text]{width:70px}
   input[type=range]{accent-color:var(--key);width:150px}
   input[type=checkbox]{accent-color:var(--key)}
@@ -149,79 +150,87 @@
 
   <header>
     <button id="themeBtn" type="button"></button>
-    <h1>RADE V1 Transceiver</h1>
-    <p>FreeDV's radio autoencoder running in the browser: transmit and receive RADE V1 through your rig's USB sound card.</p>
+    <h1>RADE V1 — Transceptor</h1>
+    <p>O codificador de voz neural do FreeDV (RADE) a correr no browser: emitir e receber RADE V1 pela placa de som USB do rádio. Versão portuguesa.</p>
   </header>
 
-  <div class="panel"><span id="engine">Loading the RADE encoder…</span> <span id="decoder" class="dim"></span></div>
+  <div class="panel"><span id="engine">A carregar o codificador RADE…</span> <span id="decoder" class="dim"></span></div>
 
   <div class="panel">
-    <h2>Audio</h2>
+    <h2>Rádio e CAT</h2>
     <div class="row">
-      <button id="allow">Find audio devices</button>
-      <span class="dim">Chosen devices are remembered.</span>
+      <label>Rádio <select id="rigSel"></select></label>
+      <label>Velocidade <select id="baudSel">
+        <option value="4800">4800</option><option value="9600">9600</option><option value="19200">19200</option>
+        <option value="38400">38400</option><option value="57600">57600</option><option value="115200">115200</option>
+      </select> bps</label>
+      <button id="catBtn">Ligar CAT</button>
     </div>
     <div class="row">
-      <h3>Transmit</h3>
-      <label>Microphone <select id="micSel" disabled><option value="">—</option></select></label>
+      <label>Emitir <input type="text" id="keyCmd" value="TX1;" spellcheck="false"></label>
+      <label>Receber <input type="text" id="unkeyCmd" value="TX0;" spellcheck="false"></label>
+      <label>Limite de segurança
+        <select id="tot">
+          <option value="60">1 minuto</option><option value="120" selected>2 minutos</option>
+          <option value="300">5 minutos</option><option value="600">10 minutos</option>
+        </select></label>
+      <label><input type="checkbox" id="usePtt" checked> Pôr o rádio em emissão por CAT</label>
+      <label title="Norma do FreeDV: LSB abaixo de 10 MHz, USB a partir de 10 MHz"><input type="checkbox" id="forceUsb" checked> Escolher a banda lateral (LSB abaixo de 10 MHz, USB nos 60 m e acima)</label>
+    </div>
+    <div class="row"><span id="catState" class="dim">Não ligado — use o VOX, ou ligue o CAT</span></div>
+    <p class="note" id="rigNote"></p>
+    <p class="note">O rádio volta a receção sempre que uma emissão acaba, quando o limite de segurança é atingido,
+      se a página for fechada ou em caso de erro. <b>Esc</b> termina a emissão e põe o rádio em receção de imediato.</p>
+  </div>
+
+  <div class="panel">
+    <h2>Áudio</h2>
+    <div class="row">
+      <button id="allow">Procurar dispositivos de áudio</button>
+      <span class="dim">Os dispositivos escolhidos ficam memorizados.</span>
+    </div>
+    <div class="row">
+      <h3>Emissão</h3>
+      <label>Microfone <select id="micSel" disabled><option value="">—</option></select></label>
       <span class="arrow">→</span>
-      <label>To rig <select id="outSel" disabled><option value="">—</option></select></label>
+      <label>Para o rádio <select id="outSel" disabled><option value="">—</option></select></label>
     </div>
     <div class="row">
-      <h3>Receive</h3>
-      <label>From rig <select id="rigInSel" disabled><option value="">—</option></select></label>
+      <h3>Receção</h3>
+      <label>Do rádio <select id="rigInSel" disabled><option value="">—</option></select></label>
       <span class="arrow">→</span>
-      <label>Speakers <select id="spkSel" disabled><option value="">—</option></select></label>
-      <label><input type="checkbox" id="rxOn" checked> Receive</label>
+      <label>Altifalantes <select id="spkSel" disabled><option value="">—</option></select></label>
+      <label><input type="checkbox" id="rxOn" checked> Receber</label>
     </div>
     <div class="row">
-      <label>Speech <span class="meter"><i id="micMeter"></i></span><span class="val" id="micDb">—</span></label>
-      <label>To rig <span class="meter"><i id="outMeter"></i></span><span class="val" id="outDb">—</span></label>
-      <label>From rig <span class="meter"><i id="rxMeter"></i></span><span class="val" id="rxDb">—</span></label>
+      <label>Voz <span class="meter"><i id="micMeter"></i></span><span class="val" id="micDb">—</span></label>
+      <label>Para o rádio <span class="meter"><i id="outMeter"></i></span><span class="val" id="outDb">—</span></label>
+      <label>Do rádio <span class="meter"><i id="rxMeter"></i></span><span class="val" id="rxDb">—</span></label>
     </div>
     <div class="row">
-      <label>Drive <input type="range" id="drive" min="-30" max="0" step="1" value="-6"><span class="val" id="driveVal">−6 dB</span></label>
+      <label>Nível TX <input type="range" id="drive" min="-30" max="0" step="1" value="-6"><span class="val" id="driveVal">−6 dB</span></label>
       <label>Volume <input type="range" id="vol" min="-30" max="24" step="1" value="0"><span class="val" id="volVal">0 dB</span></label>
-      <label><input type="checkbox" id="bpf" checked> Transmit bandpass filter</label>
-      <label><input type="checkbox" id="voiceProc"> Browser voice processing</label>
+      <label><input type="checkbox" id="bpf" checked> Filtro passa-banda de emissão</label>
+      <label><input type="checkbox" id="voiceProc"> Processamento de voz do browser</label>
     </div>
-    <p class="note">Drive −6 dB is the level of a standard RADE audio file. Set the rig so its ALC is barely moving;
-      RADE's envelope is almost constant, so average and peak level are nearly the same.
-      The receiver does not mind the level coming from the rig, as long as <b>From rig</b> stays out of the red.
+    <p class="note">Nível TX −6 dB é o nível de um ficheiro de áudio RADE normal. Acerte o rádio de forma a que o ALC mal se mexa;
+      o RADE tem uma envolvente quase constante, por isso o nível médio e o de pico são quase iguais.
+      O recetor não se importa com o nível que vem do rádio, desde que <b>Do rádio</b> não chegue ao vermelho.
       <span id="devWarn" class="err"></span></p>
   </div>
 
   <div class="panel">
-    <h2>PTT</h2>
-    <div class="row">
-      <button id="catBtn">Connect CAT</button>
-      <label>Key <input type="text" id="keyCmd" value="TX;" spellcheck="false"></label>
-      <label>Unkey <input type="text" id="unkeyCmd" value="RX;" spellcheck="false"></label>
-      <label>Safety limit
-        <select id="tot">
-          <option value="60">1 minute</option><option value="120" selected>2 minutes</option>
-          <option value="300">5 minutes</option><option value="600">10 minutes</option>
-        </select></label>
-      <label><input type="checkbox" id="usePtt" checked> Key the rig over CAT</label>
-      <label title="FreeDV's standard: LSB below 10 MHz, USB from 10 MHz up"><input type="checkbox" id="forceUsb" checked> Set the sideband (LSB below 10 MHz, USB on 60 m and above)</label>
-      <span id="catState" class="dim">Not connected — use VOX, or connect CAT</span>
-    </div>
-    <p class="note">115200 baud. The rig is sent to receive whenever an over ends, when the safety limit is reached,
-      if the page is closed, or on any error. <b>Esc</b> ends an over and unkeys immediately.</p>
-  </div>
-
-  <div class="panel">
-    <h2>Tuning</h2>
+    <h2>Sintonia</h2>
     <div class="tune">
-      <div class="knobwrap"><div id="knob" class="off" tabindex="0" role="slider" aria-label="Tuning knob"
-           aria-valuetext="not connected"><div class="knurl"></div><div class="shade"></div><div class="cap"></div><div class="top"><div class="dimple"></div><div class="mark"></div></div></div></div>
+      <div class="knobwrap"><div id="knob" class="off" tabindex="0" role="slider" aria-label="Botão de sintonia"
+           aria-valuetext="não ligado"><div class="knurl"></div><div class="shade"></div><div class="cap"></div><div class="top"><div class="dimple"></div><div class="mark"></div></div></div></div>
       <div class="freqbox">
-        <div id="freq" class="off" title="Click to type a frequency">—<small>MHz</small></div>
+        <div id="freq" class="off" title="Clique para escrever uma frequência">—<small>MHz</small></div>
         <input type="text" id="freqIn" inputmode="decimal" spellcheck="false">
         <div class="row" style="margin:0">
           <button class="stepbtn" id="tuneDn" disabled>−</button>
           <button class="stepbtn" id="tuneUp" disabled>+</button>
-          <label>Step <select id="tuneStep">
+          <label>Passo <select id="tuneStep">
             <option value="1">1 Hz</option><option value="5" selected>5 Hz</option>
             <option value="10">10 Hz</option><option value="100">100 Hz</option>
             <option value="1000">1 kHz</option><option value="10000">10 kHz</option>
@@ -229,126 +238,128 @@
         </div>
       </div>
     </div>
-    <p class="note">Drag the knob round, use the mouse wheel over it, or the arrow keys once it is selected
-      (Page Up / Page Down move ten steps). Click the frequency to type one in, in MHz or kHz.
-      The display follows the rig's own knob too. Tuning is locked while transmitting.</p>
+    <p class="note">Rode o botão com o rato, use a roda do rato por cima dele, ou as setas depois de o selecionar
+      (Page Up / Page Down andam dez passos). Clique na frequência para escrever uma, em MHz ou kHz.
+      O mostrador também acompanha o botão do próprio rádio. A sintonia fica bloqueada durante a emissão.</p>
     <hr>
-    <div class="row">
-      <h3>Rig</h3>
-      <label title="The QMX keeps a separate RF gain for each band">RF gain <input type="range" id="rgSl" min="0" max="80" step="1" value="0" disabled><span class="val" id="rgVal">—</span></label>
-      <label title="The QMX's Volume also sets the audio level it sends to the PC">QMX volume <input type="range" id="agSl" min="0" max="200" step="1" value="0" disabled><span class="val" id="agVal">—</span></label>
+    <div class="row" id="lvlRow">
+      <h3>Rádio</h3>
+      <label title="O QMX guarda um RF gain para cada banda">RF gain <input type="range" id="rgSl" min="0" max="80" step="1" value="0" disabled><span class="val" id="rgVal">—</span></label>
+      <label title="O volume do QMX também define o nível de áudio que envia ao PC">Volume do QMX <input type="range" id="agSl" min="0" max="200" step="1" value="0" disabled><span class="val" id="agVal">—</span></label>
     </div>
     <div class="row">
-      <h3>Listen</h3>
-      <label><input type="checkbox" id="monOn" checked> Hear the rig when no RADE is decoded</label>
-      <label>Boost <input type="range" id="monGain" min="-20" max="24" step="1" value="0"><span class="val" id="monVal">0 dB</span></label>
+      <h3>Ouvir</h3>
+      <label><input type="checkbox" id="monOn" checked> Ouvir o rádio quando não há RADE a descodificar</label>
+      <label>Reforço <input type="range" id="monGain" min="-20" max="24" step="1" value="0"><span class="val" id="monVal">0 dB</span></label>
     </div>
-    <p class="note" style="margin-top:6px">RF gain is kept by the QMX for each band, so check it after changing band. With
-      <b>Hear the rig</b> on you hear the band itself, noise, SSB and all, whenever the decoder is not giving speech; it goes
-      quiet by itself while RADE is being decoded and while you transmit.</p>
+    <p class="note" style="margin-top:6px"><span id="lvlNote">O QMX guarda o RF gain por banda, por isso confirme-o depois de mudar de banda. </span>Com
+      <b>Ouvir o rádio</b> ligado ouve-se a própria banda (ruído, SSB, tudo) sempre que o descodificador não está a dar voz; fica
+      em silêncio sozinho enquanto o RADE está a ser descodificado e enquanto emite.</p>
     <hr>
     <div class="row" id="bandRow">
-      <h3>Band</h3>
+      <h3>Banda</h3>
     </div>
-    <p class="note" style="margin-top:6px">Each button tunes to the usual FreeDV frequency on that band, sets the sideband
-      (LSB below 10 MHz, USB on 60 m and above) and sets the scan range, up to 10 kHz either side within the band.
-      60 m uses 5.363 MHz, the highest USB voice setting in the IARU Region 1 plan. <b>Choose bands</b> hides the ones your QMX does not have.</p>
+    <p class="note" style="margin-top:6px">Cada botão sintoniza a frequência habitual do FreeDV nessa banda, escolhe a banda lateral
+      (LSB abaixo de 10 MHz, USB nos 60 m e acima) e define a gama de pesquisa, até 10 kHz para cada lado dentro da banda.
+      Nos 60 m usa-se 5,363 MHz, a sintonia de voz USB mais alta do plano da IARU Região 1. <b>Escolher bandas</b> esconde as que o seu rádio não tem.</p>
     <hr>
     <div class="row">
-      <h3>Scan</h3>
-      <label>From <input type="text" id="scanLo" spellcheck="false"></label>
-      <label>to <input type="text" id="scanHi" spellcheck="false"> MHz</label>
-      <label>Listen <select id="scanDwell"><option value="1000">1 s</option><option value="1500" selected>1.5 s</option>
-        <option value="2500">2.5 s</option><option value="4000">4 s</option></select> per stop</label>
-      <label>Stop on <select id="scanThr"><option value="4">weak signals (4 dB)</option>
-        <option value="6" selected>normal (6 dB)</option><option value="10">strong only (10 dB)</option></select></label>
+      <h3>Pesquisa</h3>
+      <label>De <input type="text" id="scanLo" spellcheck="false"></label>
+      <label>a <input type="text" id="scanHi" spellcheck="false"> MHz</label>
+      <label>Ouvir <select id="scanDwell"><option value="1000">1 s</option><option value="1500" selected>1,5 s</option>
+        <option value="2500">2,5 s</option><option value="4000">4 s</option></select> em cada paragem</label>
+      <label>Parar em <select id="scanThr"><option value="4">sinais fracos (4 dB)</option>
+        <option value="6" selected>normal (6 dB)</option><option value="10">só fortes (10 dB)</option></select></label>
     </div>
     <div class="row">
-      <button id="scanBtn" disabled>Scan</button>
-      <button id="scanGo" disabled>Continue scan</button>
-      <label><input type="checkbox" id="autoCentre" checked> Centre on a RADE lock</label>
+      <button id="scanBtn" disabled>Pesquisar</button>
+      <button id="scanGo" disabled>Continuar a pesquisa</button>
+      <label><input type="checkbox" id="autoCentre" checked> Centrar quando apanha RADE</label>
     </div>
-    <p class="note" id="scanState">The scan moves up the range 1 kHz at a time and stops on any wide signal, centred on the dial.
-      You decide whether it is RADE: <b>Continue scan</b> moves on, <b>Stop scan</b> stays. With <b>Centre on a RADE lock</b>,
-      the dial is nudged so the offset reads 0 Hz whenever the decoder is locked. Receive must be on.</p>
+    <p class="note" id="scanState">A pesquisa sobe a gama 1 kHz de cada vez e para em qualquer sinal largo, centrado no mostrador.
+      É você que decide se é RADE: <b>Continuar a pesquisa</b> avança, <b>Parar a pesquisa</b> fica. Com <b>Centrar quando apanha RADE</b>,
+      o mostrador é ajustado para o desvio ficar em 0 Hz sempre que o descodificador está sincronizado. A receção tem de estar ligada.</p>
   </div>
 
   <div class="panel">
     <div class="txrow">
-      <button id="txBtn" disabled>Transmit</button>
+      <button id="txBtn" disabled>Emitir</button>
       <div>
-        <div id="state" class="rx">Receive</div>
+        <div id="state" class="rx">Receção</div>
         <div class="stats">
-          <span><span class="lamp" id="lamp"></span><b id="sync">not receiving</b></span>
+          <span><span class="lamp" id="lamp"></span><b id="sync">sem receção</b></span>
           <span>SNR <b id="snr">—</b></span>
-          <span>Offset <b id="foff">—</b></span>
-          <span>Decoder load <b id="decLoad">—</b></span>
-          <span>Speech buffer <b id="spkBuf">—</b></span>
+          <span>Desvio <b id="foff">—</b></span>
+          <span>Carga do descodificador <b id="decLoad">—</b></span>
+          <span>Buffer de voz <b id="spkBuf">—</b></span>
         </div>
         <div class="stats">
-          <span>On air <b id="elapsed">0:00</b></span>
-          <span>Encoder load <b id="load">—</b></span>
+          <span>No ar <b id="elapsed">0:00</b></span>
+          <span>Carga do codificador <b id="load">—</b></span>
           <span>Buffer <b id="buf">—</b></span>
-          <span>Gaps <b id="under">0</b></span>
+          <span>Falhas <b id="under">0</b></span>
         </div>
       </div>
     </div>
-    <p class="note"><b>Space</b> starts and ends an over. Speech reaches the air about 0.4 s after you say it.
-      Receiving pauses while you transmit.</p>
+    <p class="note"><b>Espaço</b> começa e acaba uma emissão. A voz chega ao ar cerca de 0,4 s depois de a dizer.
+      A receção fica em pausa enquanto emite.</p>
   </div>
 
   <div class="panel">
-    <h2 id="wfTitle">Signal</h2>
-    <div class="wfmark" title="Yellow: where a RADE signal sits when it is tuned in. Green: where the decoder has found one.">
-      <span class="exp" id="wfExp">RADE goes here when tuned</span><span class="got" id="wfGot">locked</span>
+    <h2 id="wfTitle">Sinal</h2>
+    <div class="wfmark" title="Amarelo: onde fica um sinal RADE bem sintonizado. Verde: onde o descodificador encontrou um.">
+      <span class="exp" id="wfExp">O RADE fica aqui quando sintonizado</span><span class="got" id="wfGot">sincronizado</span>
     </div>
     <canvas id="wf" width="900" height="170"></canvas>
     <div class="scale"><span>0</span><span>500</span><span>1000</span><span>1500</span><span>2000</span><span>2500</span><span>3000</span><span>3500</span><span>4000 Hz</span></div>
     <div class="row wfctl">
-      <label title="Higher contrast makes small differences above the noise show more strongly">Contrast <input type="range" class="big" id="wfCon" min="1" max="10" step="1" value="7"><span class="val" id="wfConVal"></span></label>
-      <label title="Brighter lifts weak signals out of the dark background">Brightness <input type="range" class="big" id="wfBri" min="-10" max="10" step="1" value="0"><span class="val" id="wfBriVal"></span></label>
-      <label title="More smoothing averages the noise away so a weak signal stands out, but the display reacts more slowly">Smoothing <input type="range" class="big" id="wfAvg" min="1" max="5" step="1" value="4"><span class="val" id="wfAvgVal"></span></label>
-      <button id="wfReset" type="button">Reset display</button>
+      <label title="Mais contraste realça as pequenas diferenças acima do ruído">Contraste <input type="range" class="big" id="wfCon" min="1" max="10" step="1" value="7"><span class="val" id="wfConVal"></span></label>
+      <label title="Mais brilho tira os sinais fracos do fundo escuro">Brilho <input type="range" class="big" id="wfBri" min="-10" max="10" step="1" value="0"><span class="val" id="wfBriVal"></span></label>
+      <label title="Mais suavização faz a média do ruído para um sinal fraco sobressair, mas o mostrador reage mais devagar">Suavização <input type="range" class="big" id="wfAvg" min="1" max="5" step="1" value="4"><span class="val" id="wfAvgVal"></span></label>
+      <button id="wfReset" type="button">Repor o mostrador</button>
     </div>
-    <p class="note">The noise is set to dark blue automatically. A RADE signal shows as a <b>bright block about 1.5 kHz wide</b>:
-      tune until it fills the yellow bar. When the decoder locks, a green bar shows where it found the signal.</p>
+    <p class="note">O ruído fica azul-escuro automaticamente. Um sinal RADE aparece como um <b>bloco claro com cerca de 1,5 kHz de largura</b>:
+      sintonize até ele encher a barra amarela. Quando o descodificador sincroniza, uma barra verde mostra onde encontrou o sinal.</p>
   </div>
 
   <div class="panel">
-    <h2>Recordings</h2>
+    <h2>Gravações</h2>
     <div class="row">
-      <h3>Received</h3>
-      <button id="rxLastSave" disabled>Save the last over heard</button>
-      <button id="rxLastRaw" disabled>Save it as RADE audio</button>
+      <h3>Recebido</h3>
+      <button id="rxLastSave" disabled>Guardar a última emissão ouvida</button>
+      <button id="rxLastRaw" disabled>Guardar como áudio RADE</button>
       <span id="rxLastInfo" class="dim"></span>
     </div>
     <div class="row">
-      <h3>Decode</h3>
+      <h3>Descodificar</h3>
       <input type="file" id="rxFileIn" accept="audio/*,.wav">
-      <button id="rxFilePlay" disabled>Play</button>
-      <button id="rxFileSave" disabled>Save the speech</button>
+      <button id="rxFilePlay" disabled>Ouvir</button>
+      <button id="rxFileSave" disabled>Guardar a voz</button>
     </div>
-    <p class="note" id="rxFileInfo" style="margin-top:4px">Decodes a recording of RADE off air — from your rig, FreeDV,
-      or a web SDR — without touching the radio.</p>
+    <p class="note" id="rxFileInfo" style="margin-top:4px">Descodifica uma gravação de RADE captada no ar — do seu rádio, do FreeDV
+      ou de um SDR na web — sem mexer no rádio.</p>
     <hr>
     <div class="row">
-      <h3>Transmit</h3>
+      <h3>Emitir</h3>
       <input type="file" id="fileIn" accept="audio/*,.wav">
-      <button id="filePlay" disabled>Transmit the recording</button>
-      <button id="fileSave" disabled>Save as RADE audio</button>
-      <button id="lastSave" disabled>Save my last over</button>
+      <button id="filePlay" disabled>Emitir a gravação</button>
+      <button id="fileSave" disabled>Guardar como áudio RADE</button>
+      <button id="lastSave" disabled>Guardar a minha última emissão</button>
     </div>
-    <p class="note">Encodes a speech recording off air, for checking without a microphone. A saved file is 8 kHz mono at
-      RADE's standard level, so it decodes in FreeDV, <code>rade_rx_wav</code>, or the Decode button above.
+    <p class="note">Codifica uma gravação de voz, para testar sem microfone. Um ficheiro guardado é mono a 8 kHz, ao
+      nível normal do RADE, por isso descodifica no FreeDV, no <code>rade_rx_wav</code> ou no botão Descodificar acima.
       <span id="fileInfo"></span></p>
   </div>
 
   <div class="panel">
-    <p class="note" style="margin:0"><b>What this is.</b> FreeDV's C port of RADE (<code>rade_c</code>, BSD), the
-      Opus feature extractor and the FARGAN vocoder (BSD), compiled to WebAssembly and run entirely in this page —
-      nothing is sent anywhere. RADE V1 only. End-of-over frames are sent and detected, but carry no callsign: FreeDV
-      encodes callsigns with its own text scheme, which this page does not yet implement. Chrome or Edge is needed
-      for choosing audio devices and for CAT.</p>
+    <p class="note" style="margin:0"><b>O que é isto.</b> A versão em C do RADE do FreeDV (<code>rade_c</code>, BSD), o
+      extrator de características do Opus e o vocoder FARGAN (BSD), compilados para WebAssembly e a correr inteiramente
+      nesta página — nada é enviado para lado nenhum. Só RADE V1. O fim de emissão é enviado e detetado, mas sem indicativo:
+      o FreeDV codifica os indicativos com um esquema próprio que esta página ainda não implementa. É preciso o Chrome ou o
+      Edge para escolher os dispositivos de áudio e para o CAT.</p>
+    <p class="note">Versão portuguesa com lista de rádios (CU2ED), baseada no
+      <a href="https://github.com/Sparks72/rade-tx">rade-tx</a> de Sparks72 (licença BSD de 2 cláusulas).</p>
   </div>
 </div>
 
@@ -386,11 +397,11 @@ async function loadEngine(){
   try {
     M = await createRadeTx();
   } catch (e) {
-    $('engine').textContent = 'The RADE encoder failed to load: ' + e.message;
+    $('engine').textContent = 'O codificador RADE não carregou: ' + e.message;
     $('engine').className = 'err';
     return;
   }
-  if (M._rw_init(1) !== 0){ $('engine').textContent = 'The RADE encoder failed to initialise.'; $('engine').className = 'err'; return; }
+  if (M._rw_init(1) !== 0){ $('engine').textContent = 'O codificador RADE não arrancou.'; $('engine').className = 'err'; return; }
   E = {
     FR: M._rw_frame_pcm(), NF: M._rw_nb_features(),
     NIN: M._rw_n_features_in(), NOUT: M._rw_n_samples_out(), NEOO: M._rw_n_eoo_out()
@@ -398,8 +409,8 @@ async function loadEngine(){
   E.per = E.NIN / E.NF;
   E.pPcm = M._malloc(E.FR * 2); E.pFeat = M._malloc(E.NF * 4);
   E.pIn = M._malloc(E.NIN * 4); E.pIq = M._malloc(Math.max(E.NOUT, E.NEOO) * 8);
-  $('engine').textContent = `RADE V1 encoder ready in ${Math.round(performance.now() - t)} ms — `
-    + `${E.per} speech frames per ${E.NOUT / MODEM_RATE * 1000} ms modem frame.`;
+  $('engine').textContent = `Codificador RADE V1 pronto em ${Math.round(performance.now() - t)} ms — `
+    + `${E.per} tramas de voz por cada trama de modem de ${E.NOUT / MODEM_RATE * 1000} ms.`;
   $('engine').className = 'ok';
   $('txBtn').disabled = false;
   if ($('fileIn').files.length) $('filePlay').disabled = $('fileSave').disabled = false;
@@ -547,11 +558,11 @@ const workletModule = () => 'data:application/javascript;charset=utf-8,' + encod
 async function setSink(ctx, id){
   if (!ctx || !id || id === '-') return;
   if (typeof ctx.setSinkId !== 'function'){
-    $('engine').textContent = 'This browser cannot choose an output device — audio goes to the default device.';
+    $('engine').textContent = 'Este browser não deixa escolher a saída de áudio — o áudio vai para o dispositivo por defeito.';
     return;
   }
   try { await ctx.setSinkId(id === 'default' ? '' : id); }
-  catch (e){ $('engine').textContent = 'Could not switch to that output: ' + e.message; $('engine').className = 'err'; }
+  catch (e){ $('engine').textContent = 'Não foi possível mudar para essa saída: ' + e.message; $('engine').className = 'err'; }
 }
 
 /* ---------- output: an 8 kHz context, so the browser does the resampling ---- */
@@ -649,12 +660,12 @@ async function loadDecoder(){
   try { D = await makeDecoder(); }
   catch (e){
     $('decoder').textContent = typeof WebAssembly.validate === 'function' && !simdOk()
-      ? 'Receiving needs WebAssembly SIMD (Chrome 91, Edge 91, Firefox 89, Safari 16.4 or later); transmitting still works.'
+      ? 'A receção precisa de WebAssembly SIMD (Chrome 91, Edge 91, Firefox 89, Safari 16.4 ou mais recente); a emissão funciona na mesma.'
       : 'The RADE decoder failed to load: ' + e.message;
     $('decoder').className = 'err';
     return;
   }
-  $('decoder').textContent = `Decoder ready in ${Math.round(performance.now() - t)} ms.`;
+  $('decoder').textContent = `Descodificador pronto em ${Math.round(performance.now() - t)} ms.`;
   $('decoder').className = 'ok';
   rxTick();
   if ($('rxFileIn').files.length) decodeFile();
@@ -713,7 +724,7 @@ async function startReceive(){
     if (!rx.clock) rx.clock = setInterval(rxTick, 250);
     rxTick();
   } catch (e){
-    $('decoder').textContent = 'Could not open the rig audio: ' + e.message; $('decoder').className = 'err';
+    $('decoder').textContent = 'Não foi possível abrir o áudio do rádio: ' + e.message; $('decoder').className = 'err';
     await stopReceive();
   }
 }
@@ -801,7 +812,7 @@ function finishRec(){
   rx.last = { audio: cat(c.audio, c.len), speech: cat(c.speech, c.slen), t0: c.t0 };
   window.radeLastRx = rx.last;
   $('rxLastSave').disabled = $('rxLastRaw').disabled = false;
-  $('rxLastInfo').textContent = `${(c.slen / SPEECH_RATE).toFixed(1)} s of speech at ${c.t0.toLocaleTimeString()}`;
+  $('rxLastInfo').textContent = `${(c.slen / SPEECH_RATE).toFixed(1)} s de voz às ${c.t0.toLocaleTimeString()}`;
 }
 
 /* Exact digital silence from From rig for 3 s: not a quiet band (that still shows noise) but audio that never
@@ -812,11 +823,11 @@ function silenceTick(){
   if (on && !silenceShown){
     silenceShown = true;
     $('decoder').className = 'err';
-    $('decoder').textContent = 'No audio at all is reaching the page from \u201cFrom rig\u201d (exact silence, not even noise). '
-      + 'Close other programs using the QMX (WSJT-X, other QMX pages), check Windows Settings \u203a Privacy \u203a Microphone '
-      + 'lets desktop apps use it, and that this site may use the microphone (padlock by the address). Then click Find audio devices.';
+    $('decoder').textContent = 'Não chega áudio nenhum à página vindo de \u201cDo rádio\u201d (silêncio absoluto, nem ruído). '
+      + 'Feche outros programas que estejam a usar o rádio (WSJT-X, FreeDV, outras páginas), confirme em Definições do Windows \u203a Privacidade \u203a Microfone '
+      + 'que as aplicações podem usá-lo, e que este site pode usar o microfone (cadeado junto ao endereço). Depois clique em Procurar dispositivos de áudio.';
   } else if (!on && silenceShown && rx.heardT && performance.now() - rx.heardT < 1000){
-    silenceShown = false; $('decoder').className = 'ok'; $('decoder').textContent = 'Audio from the rig is arriving.';
+    silenceShown = false; $('decoder').className = 'ok'; $('decoder').textContent = 'O áudio do rádio está a chegar.';
   }
 }
 function monitorTick(){
@@ -829,12 +840,12 @@ function rxTick(){
   monitorTick();
   const now = performance.now();
   const lamp = $('lamp'), s = $('sync');
-  if (!rx.on){ lamp.className = 'lamp'; s.textContent = D ? ($('rxOn').checked ? 'not receiving' : 'receive off') : 'decoder loading';
+  if (!rx.on){ lamp.className = 'lamp'; s.textContent = D ? ($('rxOn').checked ? 'sem receção' : 'receção desligada') : 'a carregar o descodificador';
     $('snr').textContent = $('foff').textContent = $('decLoad').textContent = $('spkBuf').textContent = '—'; }
-  else if (rx.paused){ lamp.className = 'lamp'; s.textContent = 'paused while transmitting'; }
+  else if (rx.paused){ lamp.className = 'lamp'; s.textContent = 'em pausa durante a emissão'; }
   else {
     lamp.className = 'lamp' + (rx.sync ? ' on' : '');
-    s.textContent = now - rx.eooT < 3000 ? 'end of over' : rx.sync ? 'RADE signal' : 'searching';
+    s.textContent = now - rx.eooT < 3000 ? 'fim de emissão' : rx.sync ? 'sinal RADE' : 'à procura';
     $('snr').textContent = rx.sync ? rx.snr.toFixed(0) + ' dB' : '—';
     $('foff').textContent = rx.sync ? (rx.foff >= 0 ? '+' : '−') + Math.abs(rx.foff).toFixed(1) + ' Hz' : '—';
     if (rx.audio > 1000){ rx.load = rx.busy / rx.audio; rx.busy = rx.audio = 0; }
@@ -843,10 +854,10 @@ function rxTick(){
   }
   if (!tx.on){
     const st = $('state');
-    if (rx.on && !rx.paused && rx.sync){ st.className = 'sync'; st.textContent = 'Receiving RADE'; }
-    else if (st.className === 'sync'){ st.className = 'rx'; st.textContent = 'Receive'; }
+    if (rx.on && !rx.paused && rx.sync){ st.className = 'sync'; st.textContent = 'A receber RADE'; }
+    else if (st.className === 'sync'){ st.className = 'rx'; st.textContent = 'Receção'; }
   }
-  $('wfTitle').textContent = tx.on ? 'Signal — transmitted' : rx.on ? 'Signal — received from the rig' : 'Signal';
+  $('wfTitle').textContent = tx.on ? 'Sinal — emitido' : rx.on ? 'Sinal — recebido do rádio' : 'Sinal';
   if (typeof autoCentre === 'function') autoCentre();
 }
 
@@ -885,9 +896,9 @@ async function toMono(file, rate){
 async function decodeFile(){
   const f = $('rxFileIn').files[0];
   if (!f) return;
-  if (!D){ $('rxFileInfo').textContent = 'Waiting for the decoder…'; return; }
+  if (!D){ $('rxFileInfo').textContent = 'À espera do descodificador…'; return; }
   $('rxFilePlay').disabled = $('rxFileSave').disabled = true;
-  $('rxFileInfo').textContent = 'Decoding…';
+  $('rxFileInfo').textContent = 'A descodificar…';
   try {
     if (!DF) DF = await makeDecoder();
     const { mono: x, duration } = await toMono(f, MODEM_RATE);   // an 8 kHz WAV passes through unchanged
@@ -907,7 +918,7 @@ async function decodeFile(){
       if (r.feat) feats.push(r.feat);
       if (r.pcm){ speech.push(r.pcm); slen += r.pcm.length; }
       if (performance.now() - t > 150){          // stay responsive on long files
-        $('rxFileInfo').textContent = `Decoding… ${Math.round(100 * pos / x.length)}%`;
+        $('rxFileInfo').textContent = `A descodificar… ${Math.round(100 * pos / x.length)}%`;
         await new Promise(r => setTimeout(r, 0)); t = performance.now();
       }
     }
@@ -918,17 +929,17 @@ async function decodeFile(){
     rxFile = { speech: out, features: fo, name: f.name.replace(/\.[^.]*$/, '') };
     window.radeRxFile = rxFile;
     $('rxFileInfo').textContent = slen
-      ? `${f.name}: ${duration.toFixed(1)} s decoded in ${(busy / 1000).toFixed(1)} s — RADE signal ${Math.round(100 * inSync / calls)}% of the time, `
-        + `average SNR ${(snrSum / Math.max(1, inSync)).toFixed(0)} dB, ${(slen / SPEECH_RATE).toFixed(1)} s of speech`
-        + (eoos ? `, ${eoos} end-of-over` : '') + '.'
-      : `${f.name}: ${duration.toFixed(1)} s, no RADE V1 signal found.`;
+      ? `${f.name}: ${duration.toFixed(1)} s descodificados em ${(busy / 1000).toFixed(1)} s — sinal RADE ${Math.round(100 * inSync / calls)}% do tempo, `
+        + `SNR médio ${(snrSum / Math.max(1, inSync)).toFixed(0)} dB, ${(slen / SPEECH_RATE).toFixed(1)} s de voz`
+        + (eoos ? `, ${eoos} ${eoos === 1 ? 'fim' : 'fins'} de emissão` : '') + '.'
+      : `${f.name}: ${duration.toFixed(1)} s, nenhum sinal RADE V1 encontrado.`;
     $('rxFilePlay').disabled = $('rxFileSave').disabled = !slen;
   } catch (e){
-    $('rxFileInfo').textContent = 'Could not decode that file: ' + e.message;
+    $('rxFileInfo').textContent = 'Não foi possível descodificar esse ficheiro: ' + e.message;
   }
 }
 async function playDecoded(){
-  if (fileSrc){ try { fileSrc.stop(); } catch {} fileSrc = null; $('rxFilePlay').textContent = 'Play'; return; }
+  if (fileSrc){ try { fileSrc.stop(); } catch {} fileSrc = null; $('rxFilePlay').textContent = 'Ouvir'; return; }
   if (!rxFile) return;
   await ensureSpeaker();
   if (spkCtx.state !== 'running') await spkCtx.resume();
@@ -936,8 +947,8 @@ async function playDecoded(){
   b.copyToChannel(rxFile.speech, 0);
   const g = spkCtx.createGain(); g.gain.value = Math.pow(10, +$('vol').value / 20);
   fileSrc = spkCtx.createBufferSource(); fileSrc.buffer = b; fileSrc.connect(g); g.connect(spkCtx.destination);
-  fileSrc.onended = () => { fileSrc = null; $('rxFilePlay').textContent = 'Play'; };
-  fileSrc.start(); $('rxFilePlay').textContent = 'Stop';
+  fileSrc.onended = () => { fileSrc = null; $('rxFilePlay').textContent = 'Ouvir'; };
+  fileSrc.start(); $('rxFilePlay').textContent = 'Parar';
 }
 
 /* ---------- meters and the waterfall ---------------------------------- */
@@ -994,9 +1005,9 @@ function wfMarkGot(){
   if (rx.on && !rx.paused && !tx.on && rx.sync){
     const c = RADE_AUDIO_CENTRE + rx.foff;
     g.style.left = ((c - 750) / 4000 * 100) + '%'; g.style.width = (1500 / 4000 * 100) + '%';
-    g.textContent = 'locked ' + (rx.foff >= 0 ? '+' : '−') + Math.abs(rx.foff).toFixed(0) + ' Hz';
+    g.textContent = 'sincronizado ' + (rx.foff >= 0 ? '+' : '−') + Math.abs(rx.foff).toFixed(0) + ' Hz';
     g.style.display = 'flex'; $('wfExp').textContent = '';
-  } else { g.style.display = 'none'; $('wfExp').textContent = 'RADE goes here when tuned'; }
+  } else { g.style.display = 'none'; $('wfExp').textContent = 'O RADE fica aqui quando sintonizado'; }
 }
 wfShow();
 
@@ -1043,13 +1054,54 @@ function drawLoop(){
   wfx.putImageData(row, 0, 0);
 }
 
+/* ---------- radio profiles (Portuguese version, CU2ED) ------------------
+   Everything that differs between radios for this page: serial speed, the
+   PTT commands, the digits of the FA frequency command, the mode command
+   (Kenwood / QMX "MD2;", Yaesu "MD02;" with the main receiver first) and
+   whether the QMX's RF gain / volume sliders apply. LSB = 1 and USB = 2 in
+   all of them. fa = 0: no frequency / mode control, PTT only. */
+const RIGS = [
+  { id: 'yaesu', name: 'Yaesu FT-710 / FTDX10 / FTDX101 / FT-991A / FT-891', baud: 38400, key: 'TX1;', unkey: 'TX0;', fa: 9, md: 'MD0', levels: false, lsb: [1, 6, 8],
+    modes: { 1: 'LSB', 2: 'USB', 3: 'CW-U', 4: 'FM', 5: 'AM', 6: 'RTTY-L', 7: 'CW-L', 8: 'DATA-L', 9: 'RTTY-U', 10: 'DATA-FM', 11: 'FM-N', 12: 'DATA-U', 13: 'AM-N', 14: 'PSK' },
+    note: 'No rádio: menu <b>MOD SOURCE = USB</b> (grupo do modo SSB), <b>USB MOD GAIN</b> para o nível de emissão (ALC a mexer pouco), <b>USB OUT LEVEL</b> para o nível de receção, '
+        + 'e <b>CAT-1 RATE</b> igual à velocidade escolhida aqui (de fábrica 38400). Escolha a porta <b>Enhanced COM Port</b> (driver Silicon Labs CP210x). Processador de voz (PROC) desligado.' },
+  { id: 'ts570', name: 'Kenwood TS-570D / TS-570S', baud: 57600, key: 'TX;', unkey: 'RX;', fa: 11, md: 'MD', levels: false, lsb: [1, 6],
+    modes: { 1: 'LSB', 2: 'USB', 3: 'CW', 4: 'FM', 5: 'AM', 6: 'FSK', 7: 'CW-R', 9: 'FSK-R' },
+    note: 'No rádio: menu <b>35</b> com a mesma velocidade (57600 = "576-1", depois desligar e ligar o rádio). Áudio de emissão na <b>ACC2 pino 11</b> (blindagem no pino 12), '
+        + 'menu <b>33</b> = nível de entrada (0..2), menu <b>32</b> = OFF, processador de voz desligado. Ao ligar, o TS-570 responde "?;" a RX; quando já está em receção: é normal.' },
+  { id: 'qmx', name: 'QRP Labs QMX / QDX', baud: 115200, key: 'TX;', unkey: 'RX;', fa: 11, md: 'MD', levels: true, lsb: [1, 9],
+    modes: { 1: 'LSB', 2: 'USB', 3: 'CW', 4: 'FM', 5: 'AM', 6: 'DIGI', 7: 'CW-R', 9: 'DIGI-R' },
+    note: 'Configuração original da página (QRP Labs QMX / QDX a 115200).' },
+  { id: 'other', name: 'Outro rádio (só PTT, comandos à mão)', baud: 0, key: '', unkey: '', fa: 0, md: '', levels: false, lsb: [1], modes: {},
+    note: 'Só o PTT: escreva os comandos de emissão e receção do seu rádio e escolha a velocidade. Sem leitura de frequência nem escolha de banda lateral.' }
+];
+const rig = () => RIGS.find(r => r.id === $('rigSel').value) || RIGS[0];
+function rigShow(){
+  const r = rig();
+  $('rigNote').innerHTML = r.note;
+  $('lvlRow').style.display = r.levels ? '' : 'none';
+  $('lvlNote').style.display = r.levels ? '' : 'none';
+  $('forceUsb').closest('label').style.display = r.md ? '' : 'none';
+}
+function rigChoose(fromUser){
+  const r = rig();
+  store.set('rig', r.id);
+  if (fromUser){
+    if (r.baud) $('baudSel').value = String(r.baud);
+    if (r.key){ $('keyCmd').value = r.key; $('unkeyCmd').value = r.unkey; }
+    store.set('baud', $('baudSel').value); store.set('keyCmd', $('keyCmd').value); store.set('unkeyCmd', $('unkeyCmd').value);
+    if (port) catNote('Rádio mudado: desligue e volte a ligar o CAT.', 'err');
+  }
+  rigShow();
+}
+
 /* ---------- CAT over Web Serial ---------------------------------------- */
 async function catConnect(){
   if (port){ await catDisconnect(); return; }
-  if (!('serial' in navigator)){ catNote('This browser has no Web Serial — use Chrome or Edge, or VOX.', 'err'); return; }
+  if (!('serial' in navigator)){ catNote('Este browser não tem Web Serial — use o Chrome ou o Edge, ou o VOX.', 'err'); return; }
   try {
     port = await navigator.serial.requestPort();
-    await port.open({ baudRate: 115200 });
+    await port.open({ baudRate: +$('baudSel').value });
     writer = port.writable.getWriter();
     (async () => {                       // read replies, so they never back up; frequency reports update the tuning display
       const dec = new TextDecoder(); let acc = '';
@@ -1061,13 +1113,13 @@ async function catConnect(){
         } }
       catch {} finally { try { reader.releaseLock(); } catch {} }
     })();
-    $('catBtn').textContent = 'Disconnect CAT';
-    catNote('Connected at 115200 baud', 'ok');      // the sideband is set once the rig reports its frequency
+    $('catBtn').textContent = 'Desligar CAT';
+    catNote(`Ligado a ${$('baudSel').value} bps`, 'ok');      // the sideband is set once the rig reports its frequency
     await cat($('unkeyCmd').value);      // start from a known state
     tuneStart();
   } catch (e){
     port = null; writer = null;
-    catNote(e.name === 'NotFoundError' ? 'No port chosen' : 'CAT failed: ' + e.message, 'err');
+    catNote(e.name === 'NotFoundError' ? 'Nenhuma porta escolhida' : 'O CAT falhou: ' + e.message, 'err');
   }
 }
 async function catDisconnect(){
@@ -1077,8 +1129,8 @@ async function catDisconnect(){
   try { if (writer) writer.releaseLock(); } catch {}
   try { if (port) await port.close(); } catch {}
   port = writer = reader = null;
-  $('catBtn').textContent = 'Connect CAT';
-  catNote('Not connected — use VOX, or connect CAT', '');
+  $('catBtn').textContent = 'Ligar CAT';
+  catNote('Não ligado — use o VOX, ou ligue o CAT', '');
 }
 async function cat(cmd){
   if (!writer || !cmd) return;
@@ -1091,10 +1143,10 @@ const wantPtt = () => $('usePtt').checked && writer;
    (the FreeDV user manual, "USB or LSB?"). MD1 = LSB, MD2 = USB. */
 const modeFor = hz => (hz < 10e6 && !(hz >= 5250000 && hz <= 5450000)) ? 1 : 2;      // 60 m: USB, as for all voice there
 const wantMode = () => tune.hz !== null ? modeFor(tune.hz) : 2;
-async function setUsb(){ if (!writer) return; if ($('forceUsb').checked) await cat('MD' + wantMode() + ';'); await sleep(60); await cat('MD;'); }
-async function keyRig(){ if (wantPtt()){ if ($('forceUsb').checked) await cat('MD' + wantMode() + ';'); await cat($('keyCmd').value); await sleep(PTT_LEAD_MS); } }
+async function setUsb(){ if (!writer || !rig().md) return; if ($('forceUsb').checked) await cat(rig().md + wantMode() + ';'); await sleep(60); await cat(rig().md + ';'); }
+async function keyRig(){ if (wantPtt()){ if ($('forceUsb').checked && rig().md) await cat(rig().md + wantMode() + ';'); await cat($('keyCmd').value); await sleep(PTT_LEAD_MS); } }
 /* on LSB the audio runs the other way: a signal higher in the audio is lower on the dial */
-const sbSign = () => ((rigMode === 1 || rigMode === 9) || (rigMode === null && tune.hz !== null && modeFor(tune.hz) === 1)) ? -1 : 1;
+const sbSign = () => ((rigMode !== null && rig().lsb.includes(rigMode)) || (rigMode === null && tune.hz !== null && modeFor(tune.hz) === 1)) ? -1 : 1;
 async function unkeyRig(){ if (writer){ try { await cat($('unkeyCmd').value); } catch {} } }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -1113,7 +1165,7 @@ function showLvl(){
   $('rgVal').textContent = lvl.rg === null ? '—' : lvl.rg + ' dB';
   $('agVal').textContent = lvl.ag === null ? '—' : (lvl.ag * 0.25).toFixed(2) + ' dB';
 }
-function readLvl(){ if (writer){ cat('RG;'); cat('AG;'); } }
+function readLvl(){ if (writer && rig().levels){ cat('RG;'); cat('AG;'); } }
 function sendLvl(which, v){
   v = Math.max(0, Math.round(v)); lvl[which] = v; showLvl();
   clearTimeout(lvl.sendT[which]);
@@ -1122,21 +1174,20 @@ function sendLvl(which, v){
   const since = Date.now() - lvl.last[which];
   if (since >= 200) go(); else lvl.sendT[which] = setTimeout(go, 200 - since);                         // at most 5 a second while dragging
 }
-const MODE_NAMES = { 1: 'LSB', 2: 'USB', 3: 'CW', 4: 'FM', 5: 'AM', 6: 'DIGI', 7: 'CW-R', 9: 'DIGI-R' };
 let rigMode = null;
 function catReply(r){
   const rg = /^RG(\d{1,3})$/.exec(r);
   if (rg){ if (!lvl.drag.rg) { lvl.rg = +rg[1]; showLvl(); } return; }
   const ag = /^AG(\d{3,4})$/.exec(r);
   if (ag){ if (!lvl.drag.ag){ const d = ag[1]; lvl.ag = parseInt(d.length >= 4 ? d.slice(1) : d, 10); showLvl(); } return; }
-  const md = /^MD(\d)$/.exec(r);
+  const md = rig().md === 'MD0' ? /^MD0([0-9A-F])$/.exec(r) : rig().md ? /^MD(\d)$/.exec(r) : null;
   if (md){
-    rigMode = +md[1];
-    const name = MODE_NAMES[rigMode] || 'mode ' + rigMode;
-    const want = wantMode(), wname = MODE_NAMES[want];
-    if (rigMode === want) catNote(`Connected at 115200 baud \u00b7 rig in ${name}`, 'ok');
-    else catNote(`Connected \u00b7 rig in ${name}, but RADE here needs ${wname} (FreeDV: LSB below 10 MHz except 60 m, USB above).`
-      + ($('forceUsb').checked ? ' The rig did not accept the change; check its SSB firmware.' : ' Tick \u201cSet the sideband\u201d.'), 'err');
+    rigMode = parseInt(md[1], 16);
+    const name = rig().modes[rigMode] || 'modo ' + rigMode;
+    const want = wantMode(), wname = want === 1 ? 'LSB' : 'USB';
+    if (rigMode === want) catNote(`Ligado a ${$('baudSel').value} bps \u00b7 rádio em ${name}`, 'ok');
+    else catNote(`Ligado \u00b7 rádio em ${name}, mas aqui o RADE precisa de ${wname} (FreeDV: LSB abaixo de 10 MHz exceto 60 m, USB acima).`
+      + ($('forceUsb').checked ? ' O rádio não aceitou a mudança.' : ' Marque \u201cEscolher a banda lateral\u201d.'), 'err');
     return;
   }
   const m = /^FA(\d{8,11})$/.exec(r);
@@ -1149,6 +1200,7 @@ function catReply(r){
   if (!$('scanLo').value || !$('scanHi').value) scanFillRange();
 }
 function tuneStart(){
+  if (!rig().fa) return;              // "other" radio: PTT only
   tuneEnable(true); scanButtons();
   cat('FA;');
   clearInterval(tune.poll);
@@ -1156,7 +1208,7 @@ function tuneStart(){
   tune.poll = setInterval(() => { if (!tx.on && !tune.drag){ cat('FA;'); if (++n % 3 === 0) readLvl(); } }, 1000);   // follow the rig's own knob and levels
 }
 function lvlOff(){ lvl.rg = lvl.ag = null; showLvl(); }
-function tuneStop(){ lvlOff(); scanStop('CAT disconnected'); setTimeout(scanButtons, 0); clearInterval(tune.poll); tune.poll = null; clearTimeout(tune.sendT); tune.sendT = null; tune.hz = null; tuneEnable(false); showFreq(); }
+function tuneStop(){ lvlOff(); scanStop('CAT desligado'); setTimeout(scanButtons, 0); clearInterval(tune.poll); tune.poll = null; clearTimeout(tune.sendT); tune.sendT = null; tune.hz = null; tuneEnable(false); showFreq(); }
 function tuneEnable(on){
   $('knob').classList.toggle('off', !on); $('freq').classList.toggle('off', !on);
   if (typeof showBand === 'function') showBand();
@@ -1170,14 +1222,14 @@ function fmtFreq(hz){
 function showFreq(){
   const f = $('freq');
   f.innerHTML = (tune.hz === null ? '—' : fmtFreq(tune.hz)) + '<small>MHz</small>';
-  $('knob').setAttribute('aria-valuetext', tune.hz === null ? 'not connected' : fmtFreq(tune.hz) + ' MHz');
+  $('knob').setAttribute('aria-valuetext', tune.hz === null ? 'não ligado' : fmtFreq(tune.hz) + ' MHz');
 }
 function drawKnob(){ $('knob').style.setProperty('--a', tune.angle + 'deg'); }   // only the rim, dimple and mark turn; the light stays put
 function stepHz(){ return +$('tuneStep').value; }
 /* move by n steps; the frequency snaps to the step, as a rig's VFO does */
 function tuneBy(n){
   if (!tuneOk() || !n) return;
-  scanStop('you tuned');
+  scanStop('sintonizou');
   const st = stepHz();
   setFreq(Math.round(tune.hz / st) * st + n * st, n * 360 / TUNE_PER_TURN);
 }
@@ -1195,14 +1247,14 @@ function sendFreq(){
   tune.sendT = null;
   if (!writer || tune.hz === tune.sentHz) return;
   tune.sentHz = tune.hz;
-  cat('FA' + String(tune.hz).padStart(11, '0') + ';');
+  cat('FA' + String(tune.hz).padStart(rig().fa, '0') + ';');
 }
 (() => {
   const k = $('knob');
   const ang = e => { const r = k.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180 / Math.PI; };
   k.addEventListener('pointerdown', e => {
     if (!tuneOk()) return;
-    scanStop('you tuned');
+    scanStop('sintonizou');
     k.setPointerCapture(e.pointerId); k.focus();
     tune.drag = { last: ang(e), rest: 0 };
     e.preventDefault();
@@ -1238,7 +1290,7 @@ function sendFreq(){
     if (e.key === 'Escape'){ close(); return; }
     if (e.key !== 'Enter') return;
     const v = parseFloat(fi.value.replace(',', '.'));
-    if (isFinite(v) && v > 0){ scanStop('you tuned'); setFreq(v < 100 ? v * 1e6 : v < 100000 ? v * 1e3 : v, 0); }
+    if (isFinite(v) && v > 0){ scanStop('sintonizou'); setFreq(v < 100 ? v * 1e6 : v < 100000 ? v * 1e3 : v, 0); }
     close();
   };
   fi.onblur = close;
@@ -1251,7 +1303,7 @@ const RADE_BANDS = [
   { band: '160 m', hz: 1870000,  lo: 1810000,  hi: 2000000 },
   { band: '80 m',  hz: 3625000,  lo: 3500000,  hi: 4000000 },
   { band: '60 m',  hz: 5363000,  lo: 5351500,  hi: 5366500,
-    note: 'IARU Region 1: the highest USB voice dial in the WRC-15 band (5351.5\u20135366.5 kHz). FreeDV\u2019s 5.3665 would put RADE outside it. Check your licence.' },
+    note: 'IARU Região 1: a sintonia de voz USB mais alta na banda da WRC-15 (5351,5\u20135366,5 kHz). O 5,3665 do FreeDV poria o RADE fora dela. Confirme a sua licença.' },
   { band: '40 m',  hz: 7177000,  lo: 7000000,  hi: 7300000 },
   { band: '20 m',  hz: 14236000, lo: 14000000, hi: 14350000 },
   { band: '17 m',  hz: 18118000, lo: 18068000, hi: 18168000 },
@@ -1264,11 +1316,11 @@ const RADE_BANDS = [
     const btn = document.createElement('button');
     btn.className = 'bandbtn'; btn.disabled = true;
     btn.innerHTML = `${b.band}<small>${(b.hz / 1e6).toFixed(3)}</small>`;
-    btn.title = `Tune to ${(b.hz / 1e6).toFixed(3)} MHz ${modeFor(b.hz) === 1 ? 'LSB' : 'USB'}` + (b.note ? '. ' + b.note : '');
+    btn.title = `Sintonizar ${(b.hz / 1e6).toFixed(3)} MHz ${modeFor(b.hz) === 1 ? 'LSB' : 'USB'}` + (b.note ? '. ' + b.note : '');
     btn.innerHTML = `${b.band}<small>${(b.hz / 1e6).toFixed(3)}</small>`;
     btn.onclick = () => {
       if (!tuneOk()) return;
-      scanStop('you changed band');
+      scanStop('mudou de banda');
       setFreq(b.hz, 0);
       const mhz = hz => (hz / 1e6).toFixed(hz % 1000 ? 4 : 3);     // 5.3665, not a rounded 5.367 outside the band
       $('scanLo').value = mhz(Math.max(b.lo, b.hz - 10000));
@@ -1280,7 +1332,7 @@ const RADE_BANDS = [
   }
   const hidden = new Set(store.get('hiddenBands', []));
   const pick = document.createElement('details'); pick.className = 'bandpick';
-  pick.innerHTML = '<summary>Choose bands</summary>';
+  pick.innerHTML = '<summary>Escolher bandas</summary>';
   for (const b of RADE_BANDS){
     const l = document.createElement('label'), c = document.createElement('input');
     c.type = 'checkbox'; c.checked = !hidden.has(b.band);
@@ -1315,7 +1367,7 @@ function parseFreq(v){
 }
 function scanButtons(){
   $('scanBtn').disabled = !writer;
-  $('scanBtn').textContent = scan.on ? 'Stop scan' : 'Scan';
+  $('scanBtn').textContent = scan.on ? 'Parar a pesquisa' : 'Pesquisar';
   $('scanGo').disabled = !(scan.on && scan.paused);
 }
 /* boxes left empty: 10 kHz either side of the dial, to the nearest kHz */
@@ -1330,7 +1382,7 @@ function scanStop(why){
   scan.on = false; scan.paused = false; scan.token++;
   if (scan.resume){ const r = scan.resume; scan.resume = null; r(); }
   scanButtons();
-  scanNote('Scan stopped' + (why ? ': ' + why : '') + (tune.hz !== null ? ` at ${fmtFreq(tune.hz)} MHz.` : '.'));
+  scanNote('Pesquisa parada' + (why ? ': ' + why : '') + (tune.hz !== null ? ` em ${fmtFreq(tune.hz)} MHz.` : '.'));
 }
 /* average the receive spectrum for ms milliseconds; return the centre of a wide signal, or null */
 async function scanListen(ms, my){
@@ -1341,7 +1393,7 @@ async function scanListen(ms, my){
     await sleep(100);
     if (!scan.on || scan.token !== my || !rxAnalyser) return null;
     held = rx.sync && !rx.paused ? held + 1 : 0;      // a lock must hold 0.8 s: the decoder can flicker into lock on noise
-    if (held >= 8) return { hz: RADE_AUDIO_CENTRE + rx.foff, why: 'the decoder has locked on a RADE signal' };
+    if (held >= 8) return { hz: RADE_AUDIO_CENTRE + rx.foff, why: 'o descodificador sincronizou num sinal RADE' };
     an.getFloatFrequencyData(db);
     for (let i = 0; i < n; i++) acc[i] += Math.pow(10, db[i] / 10);
     k++;
@@ -1365,13 +1417,13 @@ async function scanListen(ms, my){
   let lo = best.c, hi = best.c;
   while (lo > 0 && sm(lo) > lvl) lo--;
   while (hi < n - 1 && sm(hi) > lvl) hi++;
-  return { hz: (lo + hi) / 2 * bin, why: `a signal ${((hi - lo) * bin / 1000).toFixed(1)} kHz wide, ${(best.mean - floor).toFixed(0)} dB above the noise` };
+  return { hz: (lo + hi) / 2 * bin, why: `um sinal com ${((hi - lo) * bin / 1000).toFixed(1)} kHz de largura, ${(best.mean - floor).toFixed(0)} dB acima do ruído` };
 }
 async function scanRun(){
-  if (scan.on){ scanStop('stopped by you'); return; }
-  if (!tuneOk()){ scanNote('Connect CAT first, and wait for the frequency to appear.'); $('scanState').className = 'note err'; setTimeout(() => { $('scanState').className = 'note'; }, 8000); return; }
+  if (scan.on){ scanStop('parada por si'); return; }
+  if (!tuneOk()){ scanNote('Ligue primeiro o CAT e espere que a frequência apareça.'); $('scanState').className = 'note err'; setTimeout(() => { $('scanState').className = 'note'; }, 8000); return; }
   if (!rx.on || rx.paused || !rxAnalyser){
-    scanNote('The page is not receiving yet: click \u201cFind audio devices\u201d at the top, check From rig is the QMX and Receive is ticked, then press Scan again.');
+    scanNote('A página ainda não está a receber: clique em \u201cProcurar dispositivos de áudio\u201d, confirme que Do rádio é a placa de som do rádio e que Receber está marcado, e carregue outra vez em Pesquisar.');
     $('scanState').className = 'note err'; setTimeout(() => { $('scanState').className = 'note'; }, 8000);
     return;
   }
@@ -1379,7 +1431,7 @@ async function scanRun(){
   let lo = parseFreq($('scanLo').value), hi = parseFreq($('scanHi').value);
   if (lo && hi && lo > hi){ [lo, hi] = [hi, lo]; $('scanLo').value = (lo / 1e6).toFixed(3); $('scanHi').value = (hi / 1e6).toFixed(3); }
   if (!lo || !hi || hi - lo < SCAN_HOP){
-    scanNote('The scan range must be at least 1 kHz wide: for example 14.230 to 14.250 MHz.');
+    scanNote('A gama de pesquisa tem de ter pelo menos 1 kHz: por exemplo de 14.230 a 14.250 MHz.');
     $('scanState').className = 'note err'; setTimeout(() => { $('scanState').className = 'note'; }, 8000); return;
   }
   store.set('scanLo', $('scanLo').value); store.set('scanHi', $('scanHi').value);
@@ -1388,7 +1440,7 @@ async function scanRun(){
   while (scan.on && scan.token === my){
     if (!tuneOk()){ scanStop(tx.on ? 'transmitting' : 'CAT disconnected'); return; }
     setFreq(f, 0);
-    scanNote(`Scanning ${fmtFreq(f)} MHz …`);
+    scanNote(`A pesquisar ${fmtFreq(f)} MHz …`);
     await sleep(350);                                 // the rig settles, and audio from the old frequency drains
     if (!scan.on || scan.token !== my) return;
     decoderReset();
@@ -1398,8 +1450,8 @@ async function scanRun(){
       const to = Math.round(f + sbSign() * (hit.hz - RADE_AUDIO_CENTRE));
       setFreq(to, 0);
       scan.paused = true; scanButtons();
-      scanNote(`Stopped at ${fmtFreq(to)} MHz on ${hit.why}. Listen and watch the waterfall: `
-        + `Continue scan to move on, or Stop scan to stay here.`);
+      scanNote(`Parou em ${fmtFreq(to)} MHz: ${hit.why}. Ouça e veja o waterfall: `
+        + `Continuar a pesquisa para avançar, ou Parar a pesquisa para ficar aqui.`);
       await new Promise(r => { scan.resume = r; });
       if (!scan.on || scan.token !== my) return;
       scan.paused = false; scanButtons();
@@ -1441,12 +1493,12 @@ async function startOver(){
     await keyRig();
     tx.on = true; tx.ending = false; tx.t0 = performance.now();
     setState('tx');
-    tx.totTimer = setTimeout(() => endOver('safety limit reached'), +$('tot').value * 1000);
+    tx.totTimer = setTimeout(() => endOver('limite de segurança atingido'), +$('tot').value * 1000);
     tx.clock = setInterval(tick, 250);
   } catch (e){
     await unkeyRig();
     tx.on = false; setState('rx'); rxResume();
-    $('engine').textContent = 'Could not start: ' + e.message; $('engine').className = 'err';
+    $('engine').textContent = 'Não foi possível começar: ' + e.message; $('engine').className = 'err';
   }
 }
 async function endOver(why){
@@ -1472,7 +1524,7 @@ async function emergencyStop(){
   const was = tx.on;
   if (tx.on) keepLastOver();
   tx.on = false; tx.ending = false;
-  setState('rx', 'stopped');
+  setState('rx', 'parado');
   if (was) rxResume();
 }
 function keepLastOver(){
@@ -1494,11 +1546,11 @@ function setState(s, why){
   const st = $('state'), b = $('txBtn');
   if (writer && tune.hz !== null) tuneEnable(s === 'rx');
   showLvl();
-  if (s !== 'rx') scanStop('transmitting');
+  if (s !== 'rx') scanStop('a emitir');
   st.className = s;
-  st.textContent = s === 'tx' ? 'Transmitting' : s === 'end' ? 'Ending over…' : 'Receive' + (why ? ' — ' + why : '');
+  st.textContent = s === 'tx' ? 'Em emissão' : s === 'end' ? 'A terminar a emissão…' : 'Receção' + (why ? ' — ' + why : '');
   b.classList.toggle('on', s !== 'rx');
-  b.textContent = s === 'rx' ? 'Transmit' : 'End over';
+  b.textContent = s === 'rx' ? 'Emitir' : 'Terminar emissão';
   b.disabled = s === 'end';
   $('filePlay').disabled = s !== 'rx' || !fileRade;
   $('fileIn').disabled = s !== 'rx';
@@ -1509,14 +1561,14 @@ function setState(s, why){
 async function loadFile(){
   const f = $('fileIn').files[0];
   if (!f || !E || tx.on) return;
-  $('fileInfo').textContent = 'Encoding…';
+  $('fileInfo').textContent = 'A codificar…';
   const { mono, duration } = await toMono(f, SPEECH_RATE);   // decode, and resample to 16 kHz mono in one step
   const t = performance.now();
   fileRade = encodeSpeech(mono);
   const ms = performance.now() - t;
   window.radeFile = fileRade;
-  $('fileInfo').textContent = `${f.name}: ${duration.toFixed(1)} s of speech encoded in ${Math.round(ms)} ms `
-    + `(${(duration * 1000 / ms).toFixed(0)}× real time).`;
+  $('fileInfo').textContent = `${f.name}: ${duration.toFixed(1)} s de voz codificados em ${Math.round(ms)} ms `
+    + `(${(duration * 1000 / ms).toFixed(0)}× o tempo real).`;
   $('filePlay').disabled = tx.on; $('fileSave').disabled = false;
 }
 function encodeSpeech(mono){
@@ -1548,7 +1600,7 @@ async function playFile(){
   rxPause();
   await keyRig();
   tx.on = true; tx.ending = true; tx.t0 = performance.now();
-  setState('end'); $('state').textContent = 'Transmitting the recording';
+  setState('end'); $('state').textContent = 'A emitir a gravação';
   $('txBtn').disabled = true;
   tx.clock = setInterval(tick, 250);
   const safety = setTimeout(() => emergencyStop(), +$('tot').value * 1000);
@@ -1561,7 +1613,7 @@ async function playFile(){
   await unkeyRig();
   clearInterval(tx.clock);
   tx.on = false; tx.ending = false;
-  setState('rx', 'recording sent');
+  setState('rx', 'gravação enviada');
   rxResume();
 }
 
@@ -1594,7 +1646,7 @@ async function findDevicesNow(){
     const s = await navigator.mediaDevices.getUserMedia({ audio: true });   // labels need permission
     s.getTracks().forEach(t => t.stop());
   } catch (e){
-    $('engine').textContent = 'Microphone permission is needed: ' + e.message; $('engine').className = 'err'; return;
+    $('engine').textContent = 'É preciso autorizar o microfone: ' + e.message; $('engine').className = 'err'; return;
   }
   const all = await navigator.mediaDevices.enumerateDevices();
   const ins = all.filter(d => d.kind === 'audioinput'), outs = all.filter(d => d.kind === 'audiooutput');
@@ -1603,7 +1655,7 @@ async function findDevicesNow(){
   fill($('rigInSel'), ins, store.get('rigIn', ''), rigLike);
   if (outs.length){ fill($('outSel'), outs, store.get('out', ''), rigLike); fill($('spkSel'), outs, store.get('spk', '')); }
   else for (const id of ['outSel', 'spkSel']){
-    $(id).innerHTML = '<option value="-">Default output (browser cannot list devices)</option>'; $(id).disabled = true;
+    $(id).innerHTML = '<option value="-">Saída por defeito (o browser não lista os dispositivos)</option>'; $(id).disabled = true;
   }
   checkDevices();
   await reopenCapture();                 // live speech meter, so levels can be set before going on air
@@ -1615,7 +1667,7 @@ async function reopenCapture(){
   if (tx.on) return;
   await closeCapture();
   try { await ensureCapture(); if (capCtx.state !== 'running') await capCtx.resume(); }
-  catch (e){ $('engine').textContent = 'Could not open the microphone: ' + e.message; $('engine').className = 'err'; }
+  catch (e){ $('engine').textContent = 'Não foi possível abrir o microfone: ' + e.message; $('engine').className = 'err'; }
 }
 /* choose: the remembered device, else (for rig devices) one whose name looks like a radio, else the default */
 function fill(sel, list, want, prefer){
@@ -1646,17 +1698,17 @@ function checkDevices(){
   const qmx = qmxAll.find(o => !/^(default|communications)$/i.test(o.value)) || qmxAll[0];
   const wrongRig = qmx && !/QMX|QDX/i.test(lbl('rigInSel'));
   $('devWarn').textContent = [
-    wrongRig ? ` From rig is \u201c${lbl('rigInSel')}\u201d, but \u201c${qmx.textContent}\u201d is connected: choose it, or the waterfall and scan will not hear the radio.` : '',
-    same ? ' To rig and Speakers are the same device: decoded speech would go to the rig.' : '',
-    mic ? ' Microphone and From rig are the same device.' : ''].join('');
+    wrongRig ? ` Do rádio é \u201c${lbl('rigInSel')}\u201d, mas está ligado \u201c${qmx.textContent}\u201d: escolha-o, senão o waterfall e a pesquisa não ouvem o rádio.` : '',
+    same ? ' Para o rádio e Altifalantes são o mesmo dispositivo: a voz descodificada iria para o rádio.' : '',
+    mic ? ' Microfone e Do rádio são o mesmo dispositivo.' : ''].join('');
 }
 
 /* ---------- wiring ----------------------------------------------------- */
 $('allow').onclick = findDevices;
 function showThemeBtn(){
   const light = document.documentElement.getAttribute('data-theme') === 'light';
-  $('themeBtn').textContent = light ? '\u263E Dark mode' : '\u2600 Light mode';
-  $('themeBtn').title = light ? 'Switch to the dark theme' : 'Switch to the light theme';
+  $('themeBtn').textContent = light ? '\u263E Modo escuro' : '\u2600 Modo claro';
+  $('themeBtn').title = light ? 'Mudar para o tema escuro' : 'Mudar para o tema claro';
 }
 $('themeBtn').onclick = () => {
   const t = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
@@ -1701,7 +1753,13 @@ $('rxLastRaw').onclick = () => rx.last && saveWav(rx.last.audio, MODEM_RATE, rig
 $('rxFileIn').onchange = decodeFile;
 $('rxFilePlay').onclick = playDecoded;
 $('rxFileSave').onclick = () => rxFile && saveWav(rxFile.speech, SPEECH_RATE, speechInt, rxFile.name + '_decoded.wav');
-for (const id of ['keyCmd', 'unkeyCmd']){ $(id).value = store.get(id, $(id).value); $(id).onchange = () => store.set(id, $(id).value); }
+for (const r of RIGS){ const o = document.createElement('option'); o.value = r.id; o.textContent = r.name; $('rigSel').appendChild(o); }
+$('rigSel').value = store.get('rig', 'yaesu'); if (!$('rigSel').value) $('rigSel').value = 'yaesu';
+$('baudSel').value = String(store.get('baud', rig().baud || 38400));
+for (const id of ['keyCmd', 'unkeyCmd']){ $(id).value = store.get(id, rig()[id === 'keyCmd' ? 'key' : 'unkey'] || $(id).value); $(id).onchange = () => store.set(id, $(id).value); }
+$('rigSel').onchange = () => rigChoose(true);
+$('baudSel').onchange = () => { store.set('baud', $('baudSel').value); if (port) catNote('Velocidade mudada: desligue e volte a ligar o CAT.', 'err'); };
+rigChoose(false);
 $('drive').value = store.get('drive', -6); $('drive').oninput();
 $('vol').value = store.get('vol', 0); $('vol').oninput();
 $('bpf').checked = store.get('bpf', true);
